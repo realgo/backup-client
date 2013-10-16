@@ -5,9 +5,11 @@ import sys
 import syslog
 syslog.openlog(os.path.basename(sys.argv[0]))
 
+
 def get_program_path():
     import inspect
     return os.path.abspath(inspect.getfile(inspect.currentframe()))
+
 
 def length_read(fp, max_length=10000):
     data = ''
@@ -36,11 +38,14 @@ def length_read(fp, max_length=10000):
 
     return data
 
+
 def run_as_root():
     if os.getuid() != 0:
-        os.execvp('sudo', ['sudo', '-n', get_program_path()] + list(sys.argv[1:]))
+        os.execvp(
+            'sudo', ['sudo', '-n', get_program_path()] + list(sys.argv[1:]))
         syslog.syslog('Failed to exec sudo, probably need to fix sudoers')
         sys.exit(1)
+
 
 def main():
     run_as_root()
