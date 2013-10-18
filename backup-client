@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+#
+#  Backup client program that wraps rsync and allows the server to control some
+#  options which rsync doesn't.  It can also run some plugins to do things like
+#  database backups.
 
 import os
 import sys
@@ -7,8 +11,12 @@ syslog.openlog(os.path.basename(sys.argv[0]))
 
 
 def get_program_path():
-    import inspect
-    return os.path.abspath(inspect.getfile(inspect.currentframe()))
+    '''Get the full path to the Python program that is running.
+    This is used for re-invoking the program under sudo, so it needs to track
+    down the path to the program that was run, by following any relative
+    pathing or searching the path.
+    '''
+    return os.path.abspath(sys.argv[0])
 
 
 def length_read(fp, max_length=10000):
