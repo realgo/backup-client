@@ -58,4 +58,19 @@ class test_BackupClient_Main(unittest.TestCase):
         with self.assertRaises(ValueError):
             backup_client.length_read(StringIO.StringIO('000000005:Hell'))
 
+    def test_RunAsRoot(self):
+        #  test running via the path
+        os.system('rm -rf test-bin; mkdir test-bin')
+        with open('test-bin/got-root', 'w') as fp:
+            fp.write('#!/usr/bin/env python\n')
+            fp.write('import sys, os\n')
+            fp.write('sys.path.append(".")\n')
+            fp.write('import backup_client\n')
+            fp.write('backup_client.run_as_root()\n')
+            fp.write('print "uid:", os.getuid()\n')
+        os.system('chmod 755 test-bin/got-root')
+        output = subprocess.check_output('test-bin/got-root')
+        os.system('rm -rf test-bin')
+        self.assertEqual(output.rstrip(), 'uid: 0')
+
 unittest.main()
