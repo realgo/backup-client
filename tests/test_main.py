@@ -11,7 +11,7 @@ import unittest
 
 import os
 import subprocess
-import sys
+import StringIO
 import backup_client
 
 
@@ -39,17 +39,23 @@ class test_BackupClient_Main(unittest.TestCase):
             output.rstrip(),
             os.path.join(os.getcwd(), 'test-bin/test-with-path'))
 
-        #  Examples:
-        # self.assertEqual(fp.readline(), 'This is a test')
-        # self.assertFalse(os.path.exists('a'))
-        # self.assertTrue(os.path.exists('a'))
-        # self.assertTrue('already a backup server' in c.stderr)
-        # self.assertIn('fun', 'disfunctional')
-        # self.assertNotIn('crazy', 'disfunctional')
-        # with self.assertRaises(Exception):
-        #	raise Exception('test')
-        #
-        # Unconditionally fail, for example in a try block that should raise
-        # self.fail('Exception was not raised')
+    def test_LengthRead(self):
+        self.assertEqual(
+            backup_client.length_read(StringIO.StringIO('5:Hello')), 'Hello')
+        self.assertEqual(
+            backup_client.length_read(
+                StringIO.StringIO('5:Hello There')), 'Hello')
+        with self.assertRaises(ValueError):
+            backup_client.length_read(StringIO.StringIO('90000:Hello There'))
+        self.assertEqual(
+            backup_client.length_read(StringIO.StringIO('000000005:Hello')),
+            'Hello')
+        with self.assertRaises(ValueError):
+            backup_client.length_read(StringIO.StringIO('0000000005:Hello'))
+        self.assertEqual(
+            backup_client.length_read(StringIO.StringIO('000000005:Hell\0')),
+            'Hell\0')
+        with self.assertRaises(ValueError):
+            backup_client.length_read(StringIO.StringIO('000000005:Hell'))
 
 unittest.main()

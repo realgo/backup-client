@@ -20,28 +20,30 @@ def get_program_path():
 
 
 def length_read(fp, max_length=10000):
+    '''Read a string from `fp`, the string must start with a length and ":".
+    Data is read from `fp`, with the first 10 characters (or less) expected
+    to be an ASCII decimal string representing the length of the remainder
+    of the string and a colon.  For example: "5:hello", or "000000002:hi".
+    '''
     data = ''
     while len(data) < 10 and ':' not in data:
         tmp = fp.read(1)
         if not tmp:
-            syslog.syslog('Invalid input to length_read')
-            sys.exit(1)
+            raise ValueError('Invalid input to length_read')
         data += tmp
 
     length, data = data.split(':', 1)
     length = int(length)
 
     if length > max_length:
-        syslog.syslog(
+        raise ValueError(
             'Requested read length {0} greater than max {1}'
             .format(length, max_length))
-        sys.exit(1)
 
     while len(data) < length:
         tmp = fp.read(length - len(data))
         if not tmp:
-            syslog.syslog('Incomplete read in length_read')
-            sys.exit(1)
+            raise ValueError('Incomplete read in length_read')
         data += tmp
 
     return data
