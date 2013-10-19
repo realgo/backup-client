@@ -86,4 +86,15 @@ class test_BackupClient_Main(unittest.TestCase):
         os.system('rm -rf test-bin')
         self.assertEqual(output.rstrip(), 'uid: 0')
 
+    def test_ParseOptionBwlimit(self):
+        self.assertEqual(
+            backup_client.parse_option_bwlimit('bwlimit=1000'), 1000)
+        self.assertEqual(backup_client.parse_option_bwlimit('bwlimit=05'), 5)
+        self.assertEqual(backup_client.parse_option_bwlimit('bwlimit=08'), 8)
+        with self.assertRaises(ValueError):
+            backup_client.parse_option_bwlimit(
+                'bwlimit=9999999999999999999999999')
+        with self.assertRaises(ValueError):
+            backup_client.parse_option_bwlimit('bwlimit=')
+
 unittest.main()

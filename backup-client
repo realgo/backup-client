@@ -49,18 +49,75 @@ def length_read(fp, max_length=10000):
     return data
 
 
+def debug(msg):
+    syslog.syslog(msg)
+    print msg
+
+
 def run_as_root():
+    '''If this process is not being run as root, re-exec it under sudo.
+    If already running as root, just return.
+    '''
     if os.getuid() != 0:
         os.execvp(
             'sudo', ['sudo', '-n', get_program_path()] + list(sys.argv[1:]))
-        syslog.syslog('Failed to exec sudo, probably need to fix sudoers')
+        debug('Failed to exec sudo, probably need to fix sudoers')
         sys.exit(1)
+
+
+def parse_option_bwlimit(s):
+    '''Parse an "bwlimit=DDDD" option.
+    Return the integer bandwidth limit.
+    '''
+    bwlimit = int(s.split('=', 1)[-1])
+    max_limit = 10000000
+    if bwlimit > max_limit:
+        raise ValueError('Bandwidth limit too high, max={0}'.format(max_limit))
+    return bwlimit
+
+
+def is_whitelisted_fs(fs):
+    '''Is the specified file-system type worth backing up?
+    This is the fstype as read from /proc/mounts in the third column.
+    '''
+    return fs in ['btrfs', 'zfs', 'ext2', 'ext3', 'ext4', 'xfs', 'jfs']
+
+
+def run_rsync_backup(options):
+    '''Run the rsync command for doing backups, with the specified options.
+    '''
+    rsync_arguments = [
+        'rsync',
+        '--server',
+        '--sender',
+        '-lHogDtpre.i',
+        '--ignore-errors',
+        '--numeric-ids',
+        '--inplace',
+    ]
+
+    for option in options:
+        if option == 'compression':
+            rsync_arguments.append('--compression')
+        if option.starts_with('bwlimit='):
+            rsync_arguments.append(
+                '--bwlimit={0}'.format(parse_option_bwlimit(option)))
+
+    rsync_arguments.append('.')
+    rsync_arguments.append('/')
+
+    os.execvp('rsync', rsync_arguments)
+    debug('Error executing rsync command.')
+    sys.exit(250)
 
 
 def main():
     run_as_root()
-    print 'Got root:', os.getuid()
-    print 'length_read():', length_read(sys.stdin)
+
+    command = length_read(sys.stdin).split('\0')
+    if command[0] != 'rsync-backup':
+        raise ValueError('Unknown command: {0}'.format(command[0]))
+    run_rsync_backup(command[1:])
 
 if __name__ == '__main__':
     main()

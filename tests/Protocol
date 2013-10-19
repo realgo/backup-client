@@ -1,0 +1,32 @@
+On connection, you need to write a command string prefixed by an
+ASCII-encoded length and a colon.  For example:
+
+    12:rsync-backup
+
+The command string is a command followed by optional arguments, all
+separated by ASCII NUL characters.  For example, to specify a rsync backup
+with compression enabled and running at a limit of 100KB/sec:
+
+    36:rsync-backup\0compression\0bwlimit=100
+
+The length can be 0 padded up to 9 characters:
+
+    0000000012:rsync-backup
+
+Commands:
+
+    rsync-backup
+
+        Run an rsync server to send the full system data.
+
+        Options:
+
+            compression
+
+                If sent, "--compress" is used in the rsync server command.
+
+            bwlimit=\d+
+
+                If sent, with digits after the equal sign, the argument
+                "--bwlimit" is passed to the rsync server with the
+                specified number.
