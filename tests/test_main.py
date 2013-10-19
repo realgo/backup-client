@@ -15,6 +15,18 @@ import StringIO
 import backup_client
 
 
+def can_run_sudo():
+    '''Try running "sudo true" to see if sudo tests should work.'''
+    try:
+        subprocess.check_call(
+            ['sudo', '-n', 'true'],
+            stdout=os.open(os.devnull, os.O_RDWR),
+            stderr=os.open(os.devnull, os.O_RDWR))
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+
 class test_BackupClient_Main(unittest.TestCase):
     def test_GetProgramName(self):
         self.assertEqual(
@@ -58,6 +70,7 @@ class test_BackupClient_Main(unittest.TestCase):
         with self.assertRaises(ValueError):
             backup_client.length_read(StringIO.StringIO('000000005:Hell'))
 
+    @unittest.skipUnless(can_run_sudo(), 'Sudo call failed')
     def test_RunAsRoot(self):
         #  test running via the path
         os.system('rm -rf test-bin; mkdir test-bin')
