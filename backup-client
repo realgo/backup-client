@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #
-#  Backup client program that wraps rsync and allows the server to control some
-#  options which rsync doesn't.  It can also run some plugins to do things like
-#  database backups.
+#  An wrapper for rsync when called from an SSH authorized_keys file to
+#  pick up client settings for compression and bwlimit so that they can be
+#  controlled from the server, while hard-coding the other options.
 
 import os
 import sys
@@ -87,42 +87,37 @@ def is_whitelisted_fs(fs):
 def run_rsync_backup(options):
     '''Run the rsync command for doing backups, with the specified options.
     '''
-    rsync_arguments = [
-        'rsync',
-        '--server',
-        '--sender',
-        '-lHogDtpre.i',
-        '--ignore-errors',
-        '--numeric-ids',
-        '--inplace',
-    ]
-
-    for option in options:
-        if option == 'compression':
-            rsync_arguments.append('--compression')
-        if option.starts_with('bwlimit='):
-            rsync_arguments.append(
-                '--bwlimit={0}'.format(parse_option_bwlimit(option)))
-
-    rsync_arguments.append('.')
-    rsync_arguments.append('/')
+    rsync_arguments = parse_ssh_command() + get_rsync_arguments()
 
     os.execvp('rsync', rsync_arguments)
     debug('Error executing rsync command.')
     sys.exit(250)
 
 
+def get_rsync_arguments(arguments=sys.argv[1:]):
+    '''Find a "--" in the arguments and return the remainder of the arguments
+    as a list.
+    '''
+    if not '--' in arguments:
+        raise ValueError('No "--" found in arguments.')
+    return arguments[arguments.index('--') + 1:]
+
+
 def parse_ssh_command(s):
+    '''Parse the rsync options sent from the remote end and find out if
+    compression or bwlimit is specified.  Return a list of the arguments
+    that should be added to the command-line.
+    '''
     found_args = []
     for option in shlex.split(s)[1:]:
         if option.startswith('--bwlimit='):
             rate = int(option[10:])
             found_args.append('--bwlimit=%d' % rate)
-        elif option == '--compression':
-            found_args.append('--compression')
+        elif option == '--compress':
+            found_args.append('--compress')
         elif option.startswith('-') and not option.startswith('--'):
             if 'z' in option[1:]:
-                found_args.append('--compression')
+                found_args.append('--compress')
 
     return found_args
 

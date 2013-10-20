@@ -74,11 +74,11 @@ class test_BackupClient_Main(unittest.TestCase):
         self.assertEqual(
             sorted(backup_client.parse_ssh_command(
                 'rsync --server --sender -vlogDtzpre.iLsf --bwlimit=100 . /')),
-            ['--bwlimit=100', '--compression'])
+            ['--bwlimit=100', '--compress'])
         self.assertEqual(
             backup_client.parse_ssh_command(
-                'rsync --server --sender --compression -vlogDtpre.iLsf . /'),
-            ['--compression'])
+                'rsync --server --sender --compress -vlogDtpre.iLsf . /'),
+            ['--compress'])
         self.assertEqual(
             backup_client.parse_ssh_command(
                 'rsync --server --sender -vlogDtpre.iLsf . /'), [])
@@ -86,5 +86,13 @@ class test_BackupClient_Main(unittest.TestCase):
             backup_client.parse_ssh_command('rsync'), [])
         self.assertEqual(
             backup_client.parse_ssh_command('rsync --server --sender'), [])
+
+    def test_GetRsyncArguments(self):
+        self.assertEqual(
+            backup_client.get_rsync_arguments(
+                ['--foo', '--', '--server', '--sender', '-vlogDtpre.iLsf',
+                    '--bwlimit=100', '.', '/']),
+            ['--server', '--sender', '-vlogDtpre.iLsf', '--bwlimit=100',
+                '.', '/'])
 
 unittest.main()
