@@ -6,6 +6,7 @@
 
 import os
 import sys
+import shlex
 import syslog
 syslog.openlog(os.path.basename(sys.argv[0]))
 
@@ -111,13 +112,25 @@ def run_rsync_backup(options):
     sys.exit(250)
 
 
+def parse_ssh_command(s):
+    found_args = []
+    for option in shlex.split(s)[1:]:
+        if option.startswith('--bwlimit='):
+            rate = int(option[10:])
+            found_args.append('--bwlimit=%d' % rate)
+        elif option == '--compression':
+            found_args.append('--compression')
+        elif option.startswith('-') and not option.startswith('--'):
+            if 'z' in option[1:]:
+                found_args.append('--compression')
+
+    return found_args
+
+
 def main():
     run_as_root()
-
-    command = length_read(sys.stdin).split('\0')
-    if command[0] != 'rsync-backup':
-        raise ValueError('Unknown command: {0}'.format(command[0]))
-    run_rsync_backup(command[1:])
+    run_rsync_backup(
+        parse_ssh_command(os.environ.get('SSH_ORIGINAL_COMMAND')))
 
 if __name__ == '__main__':
     main()

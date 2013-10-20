@@ -11,7 +11,6 @@ import unittest
 
 import os
 import subprocess
-import StringIO
 import backup_client
 
 
@@ -51,25 +50,6 @@ class test_BackupClient_Main(unittest.TestCase):
             output.rstrip(),
             os.path.join(os.getcwd(), 'test-bin/test-with-path'))
 
-    def test_LengthRead(self):
-        self.assertEqual(
-            backup_client.length_read(StringIO.StringIO('5:Hello')), 'Hello')
-        self.assertEqual(
-            backup_client.length_read(
-                StringIO.StringIO('5:Hello There')), 'Hello')
-        with self.assertRaises(ValueError):
-            backup_client.length_read(StringIO.StringIO('90000:Hello There'))
-        self.assertEqual(
-            backup_client.length_read(StringIO.StringIO('000000005:Hello')),
-            'Hello')
-        with self.assertRaises(ValueError):
-            backup_client.length_read(StringIO.StringIO('0000000005:Hello'))
-        self.assertEqual(
-            backup_client.length_read(StringIO.StringIO('000000005:Hell\0')),
-            'Hell\0')
-        with self.assertRaises(ValueError):
-            backup_client.length_read(StringIO.StringIO('000000005:Hell'))
-
     @unittest.skipUnless(can_run_sudo(), 'Sudo call failed')
     def test_RunAsRoot(self):
         #  test running via the path
@@ -86,15 +66,25 @@ class test_BackupClient_Main(unittest.TestCase):
         os.system('rm -rf test-bin')
         self.assertEqual(output.rstrip(), 'uid: 0')
 
-    def test_ParseOptionBwlimit(self):
+    def test_ParseSshOptions(self):
         self.assertEqual(
-            backup_client.parse_option_bwlimit('bwlimit=1000'), 1000)
-        self.assertEqual(backup_client.parse_option_bwlimit('bwlimit=05'), 5)
-        self.assertEqual(backup_client.parse_option_bwlimit('bwlimit=08'), 8)
-        with self.assertRaises(ValueError):
-            backup_client.parse_option_bwlimit(
-                'bwlimit=9999999999999999999999999')
-        with self.assertRaises(ValueError):
-            backup_client.parse_option_bwlimit('bwlimit=')
+            backup_client.parse_ssh_command(
+                'rsync --server --sender -vlogDtpre.iLsf --bwlimit=100 . /'),
+            ['--bwlimit=100'])
+        self.assertEqual(
+            sorted(backup_client.parse_ssh_command(
+                'rsync --server --sender -vlogDtzpre.iLsf --bwlimit=100 . /')),
+            ['--bwlimit=100', '--compression'])
+        self.assertEqual(
+            backup_client.parse_ssh_command(
+                'rsync --server --sender --compression -vlogDtpre.iLsf . /'),
+            ['--compression'])
+        self.assertEqual(
+            backup_client.parse_ssh_command(
+                'rsync --server --sender -vlogDtpre.iLsf . /'), [])
+        self.assertEqual(
+            backup_client.parse_ssh_command('rsync'), [])
+        self.assertEqual(
+            backup_client.parse_ssh_command('rsync --server --sender'), [])
 
 unittest.main()
