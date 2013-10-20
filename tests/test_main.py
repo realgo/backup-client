@@ -10,6 +10,7 @@
 import unittest
 
 import os
+import sys
 import subprocess
 import backup_client
 
@@ -62,7 +63,7 @@ class test_BackupClient_Main(unittest.TestCase):
             fp.write('backup_client.run_as_root()\n')
             fp.write('print "uid:", os.getuid()\n')
         os.system('chmod 755 test-bin/got-root')
-        output = subprocess.check_output('test-bin/got-root')
+        output = subprocess.check_output(['test-bin/got-root', '--'])
         os.system('rm -rf test-bin')
         self.assertEqual(output.rstrip(), 'uid: 0')
 

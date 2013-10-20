@@ -61,7 +61,8 @@ def run_as_root():
     '''
     if os.getuid() != 0:
         os.execvp(
-            'sudo', ['sudo', '-n', get_program_path()] + list(sys.argv[1:]))
+            'sudo', ['sudo', '-n', get_program_path()]
+            + ['--'] + parse_ssh_command() + get_rsync_arguments())
         debug('Failed to exec sudo, probably need to fix sudoers')
         sys.exit(1)
 
@@ -84,7 +85,7 @@ def is_whitelisted_fs(fs):
     return fs in ['btrfs', 'zfs', 'ext2', 'ext3', 'ext4', 'xfs', 'jfs']
 
 
-def run_rsync_backup(options):
+def run_rsync_backup():
     '''Run the rsync command for doing backups, with the specified options.
     '''
     rsync_arguments = parse_ssh_command() + get_rsync_arguments()
@@ -94,22 +95,27 @@ def run_rsync_backup(options):
     sys.exit(250)
 
 
-def get_rsync_arguments(arguments=sys.argv[1:]):
+def get_rsync_arguments(arguments=None):
     '''Find a "--" in the arguments and return the remainder of the arguments
     as a list.
     '''
+    if arguments is None:
+        arguments = sys.argv[1:]
     if not '--' in arguments:
         raise ValueError('No "--" found in arguments.')
     return arguments[arguments.index('--') + 1:]
 
 
-def parse_ssh_command(s):
+def parse_ssh_command(arguments=None):
     '''Parse the rsync options sent from the remote end and find out if
     compression or bwlimit is specified.  Return a list of the arguments
     that should be added to the command-line.
     '''
+    if arguments is None:
+        arguments = os.environ.get('SSH_ORIGINAL_COMMAND', '')
+
     found_args = []
-    for option in shlex.split(s)[1:]:
+    for option in shlex.split(arguments)[1:]:
         if option.startswith('--bwlimit='):
             rate = int(option[10:])
             found_args.append('--bwlimit=%d' % rate)
@@ -124,8 +130,7 @@ def parse_ssh_command(s):
 
 def main():
     run_as_root()
-    run_rsync_backup(
-        parse_ssh_command(os.environ.get('SSH_ORIGINAL_COMMAND')))
+    run_rsync_backup()
 
 if __name__ == '__main__':
     main()
