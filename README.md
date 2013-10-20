@@ -60,7 +60,7 @@ to the arguments after "--".
 To enable sudo, you would create a file `/etc/sudoers.d/backup-client`
 which contains something similar to:
 
-    BACKUP_USERNAME ALL=(ALL) ALL, (root) NOPASSWD: backup-client
+    BACKUP_USERNAME ALL=(root)NOPASSWD: backup-client
 
 Where `BACKUP_USERNAME` is the name of the user you have created for
 backups.  This is the home directory where the .ssh directory includes the
