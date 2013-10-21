@@ -9,7 +9,7 @@ Homepage: https://github.com/realgo/backup-client
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/backup-client.git;a=summary
 
 Package: backup-client
-Architecture: any
+Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, python, rsync
 Description: authorized_keys shim for rsync-over-ssh secure backups.
  This is a helper to allow secured rsync-over-SSH backups.  Usually you
