@@ -1,0 +1,46 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" (C) Copyright 2013 Sean Reifschneider, RealGo, Inc.
+.\"     <sean+opensource@realgo.com>,
+.\"
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH BACKUP-CLIENT 1 "October 21, 2013"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+backup-client \- authorized_keys shim for securing rsync-over-ssh backups
+.SH SYNOPSIS
+.B backup-client
+.RI "-- " [ rsync options ]
+.SH DESCRIPTION
+This is a shim, to be used in the SSH
+.B authorized_keys
+file.  It allows calling rsync, with most options fixed, but allows the
+remote end to control the "\fB--compress\fP" and "\fB--bwlimit\fP" options.
+.PP
+It is placed in the "command" prefix on an SSH public key in the
+"authorized_keys" file, and given the rsync options you would like to force.
+It will then detect whether the remote end called it with the "--compress" or
+"--bwlimit" options and prepend them to the resulting rsync command-line.  It
+then execs that rsync command.
+.SH OPTIONS
+This command currently takes no options directly.  It must be given
+two dashes (`-') as its first option, then remaining options are
+passed directly to rsync.
+.SH SEE ALSO
+.BR rsync (1),
+.BR ssh (1).
+.br
+Full documentation is available in the README.md file or at
+https://github.com/realgo/backup-client.

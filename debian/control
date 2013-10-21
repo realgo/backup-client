@@ -1,15 +1,19 @@
 Source: backup-client
-Section: unknown
+Section: utils
 Priority: extra
-Maintainer: Sean Reifschneider <sean@seans-workstation.realgo.com>
+Maintainer: Sean Reifschneider <sean+opensource@realgo.com>
 Build-Depends: debhelper (>= 8.0.0)
 Standards-Version: 3.9.4
-Homepage: <insert the upstream URL, if relevant>
-#Vcs-Git: git://git.debian.org/collab-maint/backup-client.git
+Homepage: https://github.com/realgo/backup-client
+#Vcs-Git: https://github.com/realgo/backup-client.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/backup-client.git;a=summary
 
 Package: backup-client
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: <insert up to 60 chars description>
- <insert long description, indented with spaces>
+Depends: ${shlibs:Depends}, ${misc:Depends}, python, rsync
+Description: authorized_keys shim for rsync-over-ssh secure backups.
+ This is a helper to allow secured rsync-over-SSH backups.  Usually you
+ would specify a "command=" argument in the `authorized_keys` file to limit
+ what can be done with this keys.  However, if you just specify a static
+ rsync command, you can't change arguments like "bwlimit" or "compress"
+ without changing the `authorized_keys` file.
