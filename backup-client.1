@@ -1,11 +1,10 @@
-.\"                                      Hey, EMACS: -*- nroff -*-
 .\" (C) Copyright 2013 Sean Reifschneider, RealGo, Inc.
 .\"     <sean+opensource@realgo.com>,
 .\"
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH BACKUP-CLIENT 1 "October 21, 2013"
+.TH BACKUP-CLIENT 1 "October 30, 2013"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -22,7 +21,7 @@
 backup-client \- authorized_keys shim for securing rsync-over-ssh backups
 .SH SYNOPSIS
 .B backup-client
-.RI "-- " [ rsync options ]
+.RI "-- " [rsyncoptions]
 .SH DESCRIPTION
 This is a shim, to be used in the SSH
 .B authorized_keys
@@ -38,6 +37,18 @@ then execs that rsync command.
 This command currently takes no options directly.  It must be given
 two dashes (`-') as its first option, then remaining options are
 passed directly to rsync.
+.SH HELPERS
+Any scripts located in "\fB/etc/backup-client/helpers.d\fP" are run
+before rsync is started, with the argument "start".  The scripts are run
+in sorted order by script name.  After the rsync exits, these scripts
+are run in reverse order with the argument "stop".
+.PP
+In the event that a script exits with a non-zero exit-code, the remaining
+start scripts are not run, and rsync is not run.  Any scripts that were
+run with "start" are run as normal, with "stop".
+.PP
+When a helper exits with non-zero, the rsync is not run so that the helper
+script failure is obvious rather than silently being swallowed.
 .SH SEE ALSO
 .BR rsync (1),
 .BR ssh (1).

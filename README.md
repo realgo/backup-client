@@ -15,9 +15,9 @@ re-invoke itself under sudo, and will look at the arguments that were
 passed to rsync on the remote end, and preserve compression and bwlimit
 arguments.
 
-Future plans are to run scripts before starting the rsync so that you can
-pick up things like system information, ACL information, and database
-backups.
+Backup helper scripts can be placed in "/etc/backup-client/helpers.d"
+and will be run before and after the backup rsync job.  This allows you
+to pick up things like system information, ACLs, and database backups.
 
 Features
 --------
@@ -49,7 +49,7 @@ user that is allowed to run "backup-client" under sudo.
 
 The key line should be prefixed with something like:
 
-    no-pty,no-agent-forwarding,no-X11-forwarding,no-port-forwarding,command="backup-client -- --server --sender -lHogDtpre.i --ignore-errors --numeric-ids --inplace . /"
+    no-pty,no-agent-forwarding,no-X11-forwarding,no-port-forwarding,command="exec backup-client -- --server --sender -lHogDtpre.i --ignore-errors --numeric-ids --inplace . /"
 
 This prevents the key from being used to do port forwarding, etc...
 
@@ -82,6 +82,10 @@ If any of the "start" scripts exit with non-zero status, a message will be
 written to syslog, the scripts that were called with "start" are run,
 including the script that exited with non-zero, in reverse order,
 with "stop", and the rsync command is never run.
+
+The backup is aborted if any of the helper scripts exit with non-zero
+status to ensure that failures in the helpers are caught rather than
+silently ignored.
 
 Exit Codes
 ----------

@@ -152,7 +152,8 @@ class test_DirectoryRunner(unittest.TestCase):
         os.remove(s2tmp)
         os.remove(s3tmp)
 
-        if os.fork() == 0:
+        forked_pid = os.fork()
+        if forked_pid == 0:
             sys.exit = os._exit
             dr.fork_background_stop()
             time.sleep(0.1)
@@ -161,7 +162,8 @@ class test_DirectoryRunner(unittest.TestCase):
         self.assertEqual(os.path.exists(s1tmp), False)
         self.assertEqual(os.path.exists(s2tmp), False)
         self.assertEqual(os.path.exists(s3tmp), False)
-        time.sleep(0.2)
+        os.waitpid(forked_pid, 0)
+        time.sleep(0.1)
         self.assertEqual(os.path.exists(s1tmp), True)
         self.assertEqual(os.path.exists(s2tmp), True)
         self.assertEqual(os.path.exists(s3tmp), True)
