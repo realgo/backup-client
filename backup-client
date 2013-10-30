@@ -70,8 +70,9 @@ def length_read(fp, max_length=10000):
 
 
 def debug(msg):
+    '''Log a message to syslog and write to stderr.'''
     syslog.syslog(msg)
-    print msg
+    sys.stderr.write(msg + '\n')
 
 
 def run_as_root():
@@ -148,6 +149,7 @@ def parse_ssh_command(arguments=None):
 
 
 class RunDirError(Exception):
+    '''Exception raised when a pre/post script fails.'''
     pass
 
 
@@ -212,6 +214,7 @@ class DirectoryRunner:
 
 
 def main():
+    '''Main program loop.'''
     run_as_root()
     run_rsync_backup()
 
