@@ -22,6 +22,8 @@ backups.
 Features
 --------
 
+   * Run scripts in "/etc/backup-client/helpers.d" before and after backup.
+
    * Re-invokes itself under sudo if not running as root.
 
    * Detect "-z", "--compress", and "--bwlimit=DDD" arguments from remote
@@ -68,6 +70,19 @@ key generated above.  If you don't have backup-client in a directory on the
 normal system PATH, you probably will need to specify the path, such as
 `/usr/local/bin/backup-client`.
 
+Helper Scripts
+--------------
+
+Any scripts in "/etc/backup-client/helpers.d" will be run, in lexical order
+before and after the rsync is done.  Before the rsync, they are run with the
+single argument "start".  After rsync exits, they are run in reverse order
+with the argument "stop".
+
+If any of the "start" scripts exit with non-zero status, a message will be
+written to syslog, the scripts that were called with "start" are run,
+including the script that exited with non-zero, in reverse order,
+with "stop", and the rsync command is never run.
+
 Exit Codes
 ----------
 
@@ -75,6 +90,7 @@ In most cases the exit code will be whatever the rsync process exits.
 However, in the case of an error in backup-client, the following exit
 codes may be generated:
 
+* 248: A pre-backup script exited non-zero.  See syslog for details.
 * 249: An attempt was made to use sudo to gain root, which failed.
 * 250: Failed during exec() of rsync command.  Syslog should contain more
        information on the error.

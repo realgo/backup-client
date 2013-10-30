@@ -214,10 +214,32 @@ class DirectoryRunner:
             except RunDirError as e:
                 syslog.syslog(e.message)
 
+    def fork_background_stop(self):
+        '''Start a background process to run a `dr.stop()` after ppid exits.
+        '''
+        ppid = os.getpid()
+        if not self.run_scripts or os.fork() != 0:
+            return
+
+        try:
+            os.waitpid(ppid, 0)
+        except OSError:
+            pass
+        self.stop()
+        sys.exit(0)
+
 
 def main():
     '''Main program loop.'''
     run_as_root()
+
+    dr = DirectoryRunner('/etc/backup-client/helpers.d')
+    try:
+        dr.start()
+    except RunDirError:
+        sys.exit(248)
+    dr.fork_background_stop()
+
     run_rsync_backup()
 
 if __name__ == '__main__':

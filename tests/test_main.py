@@ -10,6 +10,8 @@
 import unittest
 
 import os
+import sys
+import time
 import subprocess
 import tempfile
 import backup_client
@@ -135,6 +137,39 @@ class test_DirectoryRunner(unittest.TestCase):
         self.assertEqual(os.path.exists(s3tmp), True)
         self.assertTrue(os.stat(s1tmp).st_mtime > os.stat(s2tmp).st_mtime)
         self.assertTrue(os.stat(s2tmp).st_mtime > os.stat(s3tmp).st_mtime)
+
+    def test_Dir1Fork(self):
+        os.stat_float_times(True)
+        s1tmp = os.path.join(self.tmpdir, 's1')
+        s2tmp = os.path.join(self.tmpdir, 's2')
+        s3tmp = os.path.join(self.tmpdir, 's3')
+
+        dr = backup_client.DirectoryRunner(
+            os.path.join(os.getcwd(), 'dirrunner1'))
+
+        dr.start()
+        os.remove(s1tmp)
+        os.remove(s2tmp)
+        os.remove(s3tmp)
+
+        if os.fork() == 0:
+            sys.exit = os._exit
+            dr.fork_background_stop()
+            time.sleep(0.1)
+            os._exit(0)
+
+        self.assertEqual(os.path.exists(s1tmp), False)
+        self.assertEqual(os.path.exists(s2tmp), False)
+        self.assertEqual(os.path.exists(s3tmp), False)
+        time.sleep(0.2)
+        self.assertEqual(os.path.exists(s1tmp), True)
+        self.assertEqual(os.path.exists(s2tmp), True)
+        self.assertEqual(os.path.exists(s3tmp), True)
+        self.assertTrue(os.stat(s1tmp).st_mtime > os.stat(s2tmp).st_mtime)
+        self.assertTrue(os.stat(s2tmp).st_mtime > os.stat(s3tmp).st_mtime)
+        os.remove(s1tmp)
+        os.remove(s2tmp)
+        os.remove(s3tmp)
 
     def test_Dir2(self):
         os.stat_float_times(True)
