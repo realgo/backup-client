@@ -1,0 +1,5 @@
+backup-client (1.00-1) UNRELEASED; urgency=low
+
+  * Initial release
+
+ -- Sean Reifschneider <sean+opensource@realgo.com>  Mon, 21 Oct 2013 11:34:58 -0600
