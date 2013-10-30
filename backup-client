@@ -151,38 +151,64 @@ class RunDirError(Exception):
     pass
 
 
+def run_script(cmd):
+    '''Run `cmd`, which is a list of the script and arguments.
+    Closes stdin and other file-descriptors, redirects stdout and stderr.
+    Changes to "/tmp" before running the script.
+
+    Returns on success or raises RunDirError if script exits non-zero.
+    '''
+    def close_stdin():
+        sys.stdin.close()
+        os.close(0)
+
+    child = subprocess.Popen(
+        cmd, close_fds=True, preexec_fn=close_stdin,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd='/tmp')
+    stdout = child.communicate()[0]
+
+    if child.returncode == 0:
+        return
+    raise RunDirError(
+        'Error running "%s": Return code %d, output: "%s"'
+        % (' '.join(cmd), child.returncode, stdout))
+
+
 class DirectoryRunner:
+    '''Run the script in a directory, in lexical order.
+    '''
+
     def __init__(self, script_directory):
         self.script_directory = script_directory
         self.run_scripts = []
 
     def start(self):
+        '''Run the scripts in lexical order, with "start" as an argument.
+        If a script exits with non-zero status, run `stop()` method and
+        raise RunDirError with information about failure.
+        '''
         for script_path in sorted(
                 glob.glob(os.path.join(self.script_directory, '*'))):
             try:
                 self.run_scripts.append(script_path)
-                subprocess.check_output(
-                    script_path + ' start', stderr=subprocess.STDOUT,
-                    shell=True)
-            except subprocess.CalledProcessError, e:
-                msg = (
-                    'Error running start "%s": Return code %d, output: "%s"'
-                    % (e.cmd, e.returncode, e.output))
-                syslog.syslog(msg)
+                run_script([script_path, 'start'])
+            except RunDirError as e:
+                syslog.syslog(e.message)
                 self.stop()
-                raise RunDirError(msg)
+                raise RunDirError(e.message)
 
     def stop(self):
+        '''Run previously run scripts with "stop" argument.
+        This method will take the scripts that were run in the `start`
+        method, and run them in reverse order with the argument "stop".
+        All scripts that were run by `start` are run, including the one
+        that exited non-zero in the case of an error.
+        '''
         for script_path in reversed(self.run_scripts):
             try:
-                subprocess.check_output(
-                    script_path + ' stop', stderr=subprocess.STDOUT,
-                    shell=True)
-            except subprocess.CalledProcessError, e:
-                msg = (
-                    'Error running stop "%s": Return code %d, output: "%s"'
-                    % (e.cmd, e.returncode, e.output))
-                syslog.syslog(msg)
+                run_script([script_path, 'stop'])
+            except RunDirError as e:
+                syslog.syslog(e.message)
 
 
 def main():

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+[ -z "$DIRRUNTMPDIR" ] && echo "No DIRRUNTMPDIR env" && exit 1
+
+sleep 0.01
+echo "$1" >>"${DIRRUNTMPDIR}/${0##*/}"
+exit 1

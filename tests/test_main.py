@@ -10,8 +10,8 @@
 import unittest
 
 import os
-import sys
 import subprocess
+import tempfile
 import backup_client
 
 
@@ -95,5 +95,63 @@ class test_BackupClient_Main(unittest.TestCase):
                     '--bwlimit=100', '.', '/']),
             ['--server', '--sender', '-vlogDtpre.iLsf', '--bwlimit=100',
                 '.', '/'])
+
+    def test_RunScript(self):
+        self.assertEqual(backup_client.run_script(['true']), None)
+        with self.assertRaises(backup_client.RunDirError):
+            backup_client.run_script(['false'])
+
+
+class test_DirectoryRunner(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        os.environ['DIRRUNTMPDIR'] = self.tmpdir
+
+    def tearDown(self):
+        os.system('rm -rf "%s"' % self.tmpdir)
+
+    def test_Dir1(self):
+        os.stat_float_times(True)
+        s1tmp = os.path.join(self.tmpdir, 's1')
+        s2tmp = os.path.join(self.tmpdir, 's2')
+        s3tmp = os.path.join(self.tmpdir, 's3')
+
+        dr = backup_client.DirectoryRunner(
+            os.path.join(os.getcwd(), 'dirrunner1'))
+
+        dr.start()
+        self.assertEqual(os.path.exists(s1tmp), True)
+        self.assertEqual(os.path.exists(s2tmp), True)
+        self.assertEqual(os.path.exists(s3tmp), True)
+        self.assertTrue(os.stat(s1tmp).st_mtime < os.stat(s2tmp).st_mtime)
+        self.assertTrue(os.stat(s2tmp).st_mtime < os.stat(s3tmp).st_mtime)
+        os.remove(s1tmp)
+        os.remove(s2tmp)
+        os.remove(s3tmp)
+
+        dr.stop()
+        self.assertEqual(os.path.exists(s1tmp), True)
+        self.assertEqual(os.path.exists(s2tmp), True)
+        self.assertEqual(os.path.exists(s3tmp), True)
+        self.assertTrue(os.stat(s1tmp).st_mtime > os.stat(s2tmp).st_mtime)
+        self.assertTrue(os.stat(s2tmp).st_mtime > os.stat(s3tmp).st_mtime)
+
+    def test_Dir2(self):
+        os.stat_float_times(True)
+        s1tmp = os.path.join(self.tmpdir, 's1')
+        s2tmp = os.path.join(self.tmpdir, 's2')
+        s3tmp = os.path.join(self.tmpdir, 's3')
+
+        dr = backup_client.DirectoryRunner(
+            os.path.join(os.getcwd(), 'dirrunner2'))
+
+        with self.assertRaises(backup_client.RunDirError):
+            dr.start()
+        self.assertEqual(os.path.exists(s1tmp), True)
+        self.assertEqual(os.path.exists(s2tmp), True)
+        self.assertEqual(os.path.exists(s3tmp), False)
+        self.assertTrue(os.stat(s1tmp).st_mtime > os.stat(s2tmp).st_mtime)
+        self.assertEqual(open(s1tmp, 'r').read(), 'start\nstop\n')
+        self.assertEqual(open(s2tmp, 'r').read(), 'start\nstop\n')
 
 unittest.main()
