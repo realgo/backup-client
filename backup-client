@@ -25,6 +25,8 @@ import os
 import sys
 import shlex
 import syslog
+import glob
+import subprocess
 syslog.openlog(os.path.basename(sys.argv[0]))
 
 
@@ -143,6 +145,44 @@ def parse_ssh_command(arguments=None):
                 found_args.append('--compress')
 
     return found_args
+
+
+class RunDirError(Exception):
+    pass
+
+
+class DirectoryRunner:
+    def __init__(self, script_directory):
+        self.script_directory = script_directory
+        self.run_scripts = []
+
+    def start(self):
+        for script_path in sorted(
+                glob.glob(os.path.join(self.script_directory, '*'))):
+            try:
+                self.run_scripts.append(script_path)
+                subprocess.check_output(
+                    script_path + ' start', stderr=subprocess.STDOUT,
+                    shell=True)
+            except subprocess.CalledProcessError, e:
+                msg = (
+                    'Error running start "%s": Return code %d, output: "%s"'
+                    % (e.cmd, e.returncode, e.output))
+                syslog.syslog(msg)
+                self.stop()
+                raise RunDirError(msg)
+
+    def stop(self):
+        for script_path in reversed(self.run_scripts):
+            try:
+                subprocess.check_output(
+                    script_path + ' stop', stderr=subprocess.STDOUT,
+                    shell=True)
+            except subprocess.CalledProcessError, e:
+                msg = (
+                    'Error running stop "%s": Return code %d, output: "%s"'
+                    % (e.cmd, e.returncode, e.output))
+                syslog.syslog(msg)
 
 
 def main():
