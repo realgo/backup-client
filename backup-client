@@ -84,7 +84,7 @@ def run_as_root():
             'sudo', ['sudo', '-n', get_program_path()]
             + ['--'] + parse_ssh_command() + get_rsync_arguments())
         debug('Failed to exec sudo, probably need to fix sudoers')
-        sys.exit(1)
+        sys.exit(249)
 
 
 def parse_option_bwlimit(s):
@@ -110,8 +110,10 @@ def run_rsync_backup():
     '''
     rsync_arguments = ['rsync'] + parse_ssh_command() + get_rsync_arguments()
 
-    os.execvp('rsync', rsync_arguments)
-    debug('Error executing rsync command.')
+    try:
+        os.execvp('rsync', rsync_arguments)
+    except OSError as e:
+        debug('Error executing rsync command: %s' % str(e))
     sys.exit(250)
 
 

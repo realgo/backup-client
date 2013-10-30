@@ -68,6 +68,17 @@ key generated above.  If you don't have backup-client in a directory on the
 normal system PATH, you probably will need to specify the path, such as
 `/usr/local/bin/backup-client`.
 
+Exit Codes
+----------
+
+In most cases the exit code will be whatever the rsync process exits.
+However, in the case of an error in backup-client, the following exit
+codes may be generated:
+
+* 249: An attempt was made to use sudo to gain root, which failed.
+* 250: Failed during exec() of rsync command.  Syslog should contain more
+       information on the error.
+
 Contact Information
 -------------------
 
