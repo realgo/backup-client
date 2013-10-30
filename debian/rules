@@ -14,3 +14,4 @@
 
 override_dh_auto_install:
 	install -o root -g root -D backup-client $$(pwd)/debian/backup-client/usr/bin/backup-client
+	install -o root -g root -Dd $$(pwd)/etc/backup-client/helpers.d

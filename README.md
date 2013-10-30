@@ -22,14 +22,14 @@ backups.
 Features
 --------
 
-   * Run scripts in "/etc/backup-client/helpers.d" before and after backup.
+* Run scripts in "/etc/backup-client/helpers.d" before and after backup.
 
-   * Re-invokes itself under sudo if not running as root.
+* Re-invokes itself under sudo if not running as root.
 
-   * Detect "-z", "--compress", and "--bwlimit=DDD" arguments from remote
-     SSH invocation while limiting other arguments.
+* Detect "-z", "--compress", and "--bwlimit=DDD" arguments from remote
+  SSH invocation while limiting other arguments.
 
-   * Unit tests.
+* Unit tests.
 
 Getting Started
 ---------------

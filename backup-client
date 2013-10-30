@@ -26,6 +26,7 @@ import sys
 import shlex
 import syslog
 import glob
+import time
 import subprocess
 syslog.openlog(os.path.basename(sys.argv[0]))
 
@@ -222,9 +223,18 @@ class DirectoryRunner:
             return
 
         try:
-            os.waitpid(ppid, 0)
+            #  check frequently for the first few seconds
+            #  mostly for testing purposes
+            for i in range(100):
+                os.kill(ppid, 0)
+                time.sleep(0.04)
+
+            while True:
+                os.kill(ppid, 0)
+                time.sleep(5)
         except OSError:
             pass
+
         self.stop()
         sys.exit(0)
 

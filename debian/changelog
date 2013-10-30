@@ -1,3 +1,9 @@
+backup-client (1.10-1) UNRELEASED; urgency=low
+
+  * Adding "helpers.d" sub-directory.
+
+ -- Sean Reifschneider <sean@seans-workstation.realgo.com>  Wed, 30 Oct 2013 13:17:28 -0600
+
 backup-client (1.00-1) UNRELEASED; urgency=low
 
   * Initial release
