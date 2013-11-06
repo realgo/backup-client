@@ -61,7 +61,7 @@ steps:
   the key from being used for anything but a backup.  Again, note that the
   result must be a single very long line and must not be split up:
 
-    no-pty,no-agent-forwarding,no-X11-forwarding,no-port-forwarding,command="/path/to/backup-client" [SSH KEY HERE]
+    no-pty,no-agent-forwarding,no-X11-forwarding,no-port-forwarding,command="exec /path/to/backup-client" [SSH KEY HERE]
 
 * If you used a non-root user above, you will need to allow that user to use
   sudo to re-run backup-client with no password.  Add the following to

@@ -120,9 +120,14 @@ def run_rsync_backup():
 
 def get_rsync_arguments(arguments=None):
     '''Find a "--" in the arguments and return the remainder of the arguments
-    as a list.
+    as a list.  If the argument list is empty, return a default set of
+    rsync arguments.
     '''
     if arguments is None:
+        if len(sys.argv) == 1:
+            return [
+                '--server', '--sender', '-lHogDtpre.i', '--ignore-errors',
+                '--numeric-ids', '--inplace', '.', '/']
         arguments = sys.argv[1:]
     if not '--' in arguments:
         raise ValueError('No "--" found in arguments.')

@@ -21,7 +21,7 @@
 backup-client \- authorized_keys shim for securing rsync-over-ssh backups
 .SH SYNOPSIS
 .B backup-client
-.RI "-- " [rsyncoptions]
+.RI "[-- [rsyncoptions]]"
 .SH DESCRIPTION
 This is a shim, to be used in the SSH
 .B authorized_keys
@@ -34,9 +34,10 @@ It will then detect whether the remote end called it with the "--compress" or
 "--bwlimit" options and prepend them to the resulting rsync command-line.  It
 then execs that rsync command.
 .SH OPTIONS
-This command currently takes no options directly.  It must be given
-two dashes (`-') as its first option, then remaining options are
-passed directly to rsync.
+This command currently takes no options directly.  If called with no arguments,
+it runs rsync with a standard set of arguments for sending the full
+file-system.  Otherwise, it must be given two dashes (`-') as its first
+option, then remaining options are passed directly to rsync.
 .SH HELPERS
 Any scripts located in "\fB/etc/backup-client/helpers.d\fP" are run
 before rsync is started, with the argument "start".  The scripts are run
