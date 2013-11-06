@@ -51,24 +51,24 @@ steps:
   in that file.  This must all be done as a single very long line.  This
   typically is done for the "root" or some sort of "backup" user:
 
-        cd ~backup_user       #  go to the backup user home directory
-        mkdir .ssh
-        cp /tmp/backup-identity.pub >>.ssh/authorized_keys
-        chown -R backup_user .ssh
-        chmod -R g=,o= .ssh
+      cd ~backup_user       #  go to the backup user home directory
+      mkdir .ssh
+      cp /tmp/backup-identity.pub >>.ssh/authorized_keys
+      chown -R backup_user .ssh
+      chmod -R g=,o= .ssh
 
 * Edit the `.ssh/authorized_keys` file and prefix the key with this to prevent
   the key from being used for anything but a backup.  Again, note that the
   result must be a single very long line and must not be split up:
 
-        no-pty,no-agent-forwarding,no-X11-forwarding,no-port-forwarding,command="exec /path/to/backup-client" [SSH KEY HERE]
+      no-pty,no-agent-forwarding,no-X11-forwarding,no-port-forwarding,command="exec /path/to/backup-client" [SSH KEY HERE]
 
 * If you used a non-root user above, you will need to allow that user to use
   sudo to re-run backup-client with no password.  Add the following to
   `/etc/sudoers.d/backup-client`, replacing `BACKUP_USERNAME` with the user
   you wrote the `authorized_keys` file entry for:
 
-        BACKUP_USERNAME ALL=(root)NOPASSWD: /path/to/backup-client
+      BACKUP_USERNAME ALL=(root)NOPASSWD: /path/to/backup-client
 
 At this point, on the server, you should be able to run an rsync job with:
 
