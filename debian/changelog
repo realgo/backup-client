@@ -1,3 +1,10 @@
+backup-client (1.20-1) UNRELEASED; urgency=low
+
+  * If no arguments are specified, uses a default rsync set of arguments.
+  * Better README.md.
+
+ -- Sean Reifschneider <sean@seans-workstation.realgo.com>  Wed, 06 Nov 2013 09:59:13 -0700
+
 backup-client (1.10-1) UNRELEASED; urgency=low
 
   * Adding "helpers.d" sub-directory.
