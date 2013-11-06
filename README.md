@@ -1,74 +1,81 @@
 backup-client for ssh+rsync Backups
 ===================================
 
-This is a helper to allow secured rsync-over-SSH backups.  Usually you
-would specify a "command=" argument in the `authorized_keys` file to limit
-what can be done with this keys.  However, if you just specify a static
-rsync command, you can't change arguments like "bwlimit" or "compress"
-without changing the `authorized_keys` file.
+This is an rsync helper to improve the usability of rsync backups over SSH,
+particularly in the case of securing the backups with public key identities.
+It provides these benefits:
 
-Also, you would typically have to put this in the root `authorized_keys`
-file, which requires that you allow root SSH logins.
+* Allows running from a non-root user.  If started as a non-root user it will
+  re-invoke itself under sudo.  So you can use SSH for backups while limiting
+  root logins.
 
-backup-client will detect that it is not running as root, and will
-re-invoke itself under sudo, and will look at the arguments that were
-passed to rsync on the remote end, and preserve compression and bwlimit
-arguments.
+* Runs scripts in "/etc/backup-client/helpers.d" before and after the backup
+  to run databases dumps or the like.  For example, on one of my
+  virtualization clusters, I have it create snapshots of the Windows drives
+  and mount them read-only.
 
-Backup helper scripts can be placed in "/etc/backup-client/helpers.d"
-and will be run before and after the backup rsync job.  This allows you
-to pick up things like system information, ACLs, and database backups.
+* Detects the remote end use of "--bwlimit" and "--compress", so the same
+  command-line (in an `authorized_keys` file) can be used with compression and
+  rate limiting.
 
-Features
+Overview
 --------
 
-* Run scripts in "/etc/backup-client/helpers.d" before and after backup.
+When running backups using rsync over SSH, typically you would use a
+SSH public/private key-pair that doesn't have a password on it.  To secure
+that, on the remote server you would typically add a line to the
+`authorized_keys` file which limits that key to only running a specific
+command.
 
-* Re-invokes itself under sudo if not running as root.
+In that case, the `authorized_keys` file must be modified if you want to
+enable compression, because compression is not negotiated in rsync protocol.
 
-* Detect "-z", "--compress", and "--bwlimit=DDD" arguments from remote
-  SSH invocation while limiting other arguments.
-
-* Unit tests.
+`backup-client` is a command that can be listed in the `authorized_keys` file
+and will detect if the remote end is using compression or a bandwidth limit,
+and appropriately configure the rsync command that is started.
 
 Getting Started
 ---------------
 
-Typically you would use this with a unique key for this backup, that has no
-password associated with it.  You generate one of these keys using the
-following OpenSSH command:
+To run an rsync backup using backup-client, you would typically do these
+steps:
 
-    ssh-keygen -t rsa -N '' -C backup-client -f id_backup-$HOSTNAME
+* Install backup-client somewhere on the machine to be backed up.
 
-The `$HOSTNAME` should be replaced by the host that is being backed up with
-this key.  This generates a pair of files, `id_backup-$HOSTNAME` and
-`id_backup-$HOSTNAME.pub`.  The first file needs to be kept secret, stored
-on the backup server.  The other file you need to copy to the backup client
-and put in an `.ssh/authorized_keys` file for either root or a non-root
-user that is allowed to run "backup-client" under sudo.
+* Create a passwordless SSH keypair:
 
-The key line should be prefixed with something like:
+    ssh-keygen -t rsa -N '' -C Backups -f id_backup-$HOSTNAME
 
-    no-pty,no-agent-forwarding,no-X11-forwarding,no-port-forwarding,command="exec backup-client -- --server --sender -lHogDtpre.i --ignore-errors --numeric-ids --inplace . /"
+* On the machine to be backed up, create a `~/.ssh/authorized_keys` file (if
+  it doesn't already exist) and place the `backup-identity.pub` file contents
+  in that file.  This must all be done as a single very long line.  This
+  typically is done for the "root" or some sort of "backup" user:
 
-This prevents the key from being used to do port forwarding, etc...
+    cd ~backup_user       #  go to the backup user home directory
+    mkdir .ssh
+    cp /tmp/backup-identity.pub >>.ssh/authorized_keys
+    chown -R backup_user .ssh
+    chmod -R g=,o= .ssh
 
-Note that the command-line has "--" in it and then is followed by the rsync
-arguments you wan to be used.  The above are probably what you want for a
-backup command.  backup-client will then detect whether the remote end was
-called with compression and bwlimit options, and if so will prepend those
-to the arguments after "--".
+* Edit the `.ssh/authorized_keys` file and prefix the key with this to prevent
+  the key from being used for anything but a backup.  Again, note that the
+  result must be a single very long line and must not be split up:
 
-To enable sudo, you would create a file `/etc/sudoers.d/backup-client`
-which contains something similar to:
+    no-pty,no-agent-forwarding,no-X11-forwarding,no-port-forwarding,command="/path/to/backup-client" [SSH KEY HERE]
 
-    BACKUP_USERNAME ALL=(root)NOPASSWD: backup-client
+* If you used a non-root user above, you will need to allow that user to use
+  sudo to re-run backup-client with no password.  Add the following to
+  `/etc/sudoers.d/backup-client`, replacing `BACKUP_USERNAME` with the user
+  you wrote the `authorized_keys` file entry for:
 
-Where `BACKUP_USERNAME` is the name of the user you have created for
-backups.  This is the home directory where the .ssh directory includes the
-key generated above.  If you don't have backup-client in a directory on the
-normal system PATH, you probably will need to specify the path, such as
-`/usr/local/bin/backup-client`.
+    BACKUP_USERNAME ALL=(root)NOPASSWD: /path/to/backup-client
+
+At this point, on the server, you should be able to run an rsync job with:
+
+    rsync -avzP -e 'ssh -i /path/to/id_backup-$HOSTNAME' \
+        --delete --delete-excluded --hard-links --numeric-ids \
+        --exclude=/proc/ --exclude=/dev/ --exclude=/sys/ \
+        backup_user@$HOSTNAME:/ /path/to/backups/$HOSTNAME
 
 Helper Scripts
 --------------
